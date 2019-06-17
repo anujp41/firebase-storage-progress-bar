@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+    <style>
+      .progress {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        height: 50px;
+        width: 100%;
+        text-align: center;
+        background-color: blueviolet;
+        color: white;
+      }
+      .progress-bar {
+        width: 0%;
+        height: inherit;
+        background-color: antiquewhite;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div>
+      <label for="avatar">Choose a profile picture:</label>
+      <input type="file" accept="image/png, image/jpeg" />
+    </div>
+
+    <br /><br /><br />
+    <div>
+      <label>Choose a video:</label>
+      <input type="file" accept="video/mp4" />
+    </div>
+
+    <div class="progress">
+      <section class='progress-bar'/>
+    </div>
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.min.js"
+      integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+      crossorigin="anonymous"
+    ></script>
+
+    <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-storage.js"></script>
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+    https://firebase.google.com/docs/web/setup#config-web-app -->
+
+    <script>
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        //add you firebase config variables here
+      };
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      var storage = firebase.storage();
+      $(document).ready(function() {
+        $('input').on('change', function(event) {
+          const isPhoto = event.target.getAttribute('accept').includes('jpeg');
+          const file = event.target.files[0];
+          const fileName = file.name;
+          const storageRef = storage.ref(`/${fileName}`);
+          const uploadTask = storageRef.put(file);
+          $('h2')
+            .css('visibility', 'visible')
+            .text('Starting Upload!');
+          uploadTask.on(
+            'state_changed',
+            function(snapshot) {
+              // console.log(snapshot);
+              const progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              $('.progress-bar').css('width', `${progress}%`);
+            },
+            function(err) {
+              console.error('Something went wrong', err);
+            },
+            function() {
+              $('.progress-bar').css('width', '0%');
+              uploadTask.snapshot.ref
+                .getDownloadURL()
+                .then(function(downloadURL) {
+                  let newElm = '';
+                  if (isPhoto) {
+                    newElm = $('<img>');
+                    newElm.attr({ src: downloadURL, alt: fileName });
+                  } else {
+                    newElm = $('<video>');
+                    newElm.attr({ controls: true, autoplay: true });
+                    const srcTag = $('<source>');
+                    srcTag.attr({ src: downloadURL, type: 'video/mp4' });
+                    srcTag.appendTo(newElm);
+                  }
+                  $('body').append(newElm);
+                });
+            }
+          );
+        });
+      });
+    </script>
+  </body>
+</html>
